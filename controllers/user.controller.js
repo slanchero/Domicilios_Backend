@@ -1,4 +1,5 @@
 const User = require("../models/userSchema");
+const Address=require("../models/addressSchema");
 
 const getUsers = async (req, res) => {
   const { email, password } = req.query;
@@ -38,11 +39,19 @@ const getUserID = async (req, res) => {
 };
 
 const createUser = async (req, res) => {
-  const userData = req.body;
+  const {email,name,password,phoneNumber,address,role} = req.body;
 
   try {
-    const newUser = new User(userData);
+    const newUser = new User({name,email,password,phoneNumber,role});
     await newUser.save();
+
+    const newAddress=new Address({...address,userId:newUser._id});
+    newAddress.save();
+
+    newUser.addresses.push(newAddress._id);
+
+    newUser.save();
+
     res.status(201).json(newUser);
   } catch (err) {
     res
@@ -54,7 +63,7 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const userId = req.params.id;
-    const updates = req.body;
+    const {addresses,address,...updates} = req.body;
 
     const user = await User.findByIdAndUpdate(userId, updates, { new: true });
 
@@ -71,6 +80,8 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
   try {
     const userId = req.params.id;
+
+    await Address.deleteMany({ userId: userId });
 
     const user = await User.findByIdAndDelete(userId);
 
