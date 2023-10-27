@@ -1,9 +1,10 @@
 const Address = require("../models/addressSchema");
 const User = require("../models/userSchema");
+const mongoose = require("mongoose");
 
 const getAddresses = async (req, res) => {
   try {
-    const addresses = await Address.find();
+    const addresses = await Address.find({isActive:true});
     res.json(addresses);
   } catch (err) {
     console.error(err);
@@ -15,7 +16,7 @@ const getAddress = async (req, res) => {
   const addressId = req.params.id;
 
   try {
-    const address = await Address.findById(addressId).lean();
+    const address = await Address.findOne({_id:addressId,isActive:true}).lean();
     if (!address) {
       return res.status(404).json({ message: "Direccion no encontrada" });
     }
@@ -30,11 +31,19 @@ const createAddress = async (req, res) => {
   try {
     const address = req.body;
 
+    if (!mongoose.Types.ObjectId.isValid(address.userId)) {
+      return res
+        .status(400)
+        .send({ message: "El ID de usuario no es válido." });
+    }
+
     const newAddress = new Address(address);
     newAddress.save();
 
-    const user = await User.findById(newAddress.userId);
+    const user = await User.findOne({_id:newAddress.userId,isActive:true});
+    
     if (!user) {
+      await Address.findByIdAndDelete(newAddress._id);
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
     user.addresses.push(newAddress._id);
@@ -71,7 +80,7 @@ const deleteAddress = async (req, res) => {
   try {
     const addressId = req.params.id;
 
-    const address = await Address.findByIdAndDelete(addressId);
+    const address = await Address.findByIdAndUpdate(addressId,{isActive:false});
 
     if (!address) {
       return res.status(404).send({ error: "Direccion no encontrada" });
@@ -84,8 +93,8 @@ const deleteAddress = async (req, res) => {
     }
 
     res.send(address);
-  } catch (error) {
-    res.status(500).send(error);
+  } catch (err) {
+    res.status(500).send(err);
   }
 };
 

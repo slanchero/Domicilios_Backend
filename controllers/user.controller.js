@@ -1,12 +1,12 @@
 const User = require("../models/userSchema");
-const Address=require("../models/addressSchema");
+const Address = require("../models/addressSchema");
 
 const getUsers = async (req, res) => {
   const { email, password } = req.query;
 
   if (email != undefined && password != undefined) {
     try {
-      const user = await User.find({ email: email, password: password }).lean();
+      const user = await User.find({ email: email, password: password, isActive:true }).lean();
       if (!user.length) {
         return res.status(404).json({ message: "Usuario no encontrado" });
       }
@@ -18,7 +18,7 @@ const getUsers = async (req, res) => {
   } else if ((email && !password) || (!email && password)) {
     return res.status(404).json({ message: "Credenciales Incompletas" });
   } else {
-    const users = await User.find();
+    const users = await User.find({isActive:true});
     res.json(users);
   }
 };
@@ -27,7 +27,7 @@ const getUserID = async (req, res) => {
   const userId = req.params.id;
 
   try {
-    const user = await User.findById(userId).lean();
+    const user = await User.findOne({_id:userId,isActive:true}).lean();
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }
@@ -39,13 +39,13 @@ const getUserID = async (req, res) => {
 };
 
 const createUser = async (req, res) => {
-  const {email,name,password,phoneNumber,address,role} = req.body;
+  const { email, name, password, phoneNumber, address, role } = req.body;
 
   try {
-    const newUser = new User({name,email,password,phoneNumber,role});
+    const newUser = new User({ name, email, password, phoneNumber, role });
     await newUser.save();
 
-    const newAddress=new Address({...address,userId:newUser._id});
+    const newAddress = new Address({ ...address, userId: newUser._id });
     newAddress.save();
 
     newUser.addresses.push(newAddress._id);
@@ -63,7 +63,7 @@ const createUser = async (req, res) => {
 const updateUser = async (req, res) => {
   try {
     const userId = req.params.id;
-    const {addresses,address,...updates} = req.body;
+    const { addresses, address, ...updates } = req.body;
 
     const user = await User.findByIdAndUpdate(userId, updates, { new: true });
 
@@ -81,13 +81,15 @@ const deleteUser = async (req, res) => {
   try {
     const userId = req.params.id;
 
-    await Address.deleteMany({ userId: userId });
-
-    const user = await User.findByIdAndDelete(userId);
+    const user = await User.findById(userId);
 
     if (!user) {
       return res.status(404).send({ error: "Usuario no encontrado" });
     }
+
+    await Address.updateMany({ userId: userId }, { isActive: false });
+
+    user=await User.findByIdAndUpdate(userId, { isActive: false });
 
     res.send(user);
   } catch (error) {
