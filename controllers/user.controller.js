@@ -1,5 +1,6 @@
 const User = require("../models/userSchema");
 const Address = require("../models/addressSchema");
+const mongoose=require("mongoose");
 
 const getUsers = async (req, res) => {
   const { email, password } = req.query;
@@ -27,6 +28,13 @@ const getUserID = async (req, res) => {
   const userId = req.params.id;
 
   try {
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res
+        .status(400)
+        .send({ message: "El ID de usuario no es válido." });
+    }
+
     const user = await User.findOne({_id:userId,isActive:true}).lean();
     if (!user) {
       return res.status(404).json({ message: "Usuario no encontrado" });
@@ -52,7 +60,7 @@ const createUser = async (req, res) => {
 
     newUser.save();
 
-    res.status(201).json(newUser);
+    res.status(201).json({message:"Usuario creado"});
   } catch (err) {
     res
       .status(500)
@@ -62,8 +70,20 @@ const createUser = async (req, res) => {
 
 const updateUser = async (req, res) => {
   try {
+    let message={message:"Usuario actualizado"};
+
     const userId = req.params.id;
     const { addresses, address, ...updates } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res
+        .status(400)
+        .send({ message: "El ID de usuario no es válido." });
+    }
+
+    if(address||addresses){
+      message["noUpdate"]="direcciones no actualizadas";
+    }
 
     const user = await User.findByIdAndUpdate(userId, updates, { new: true });
 
@@ -71,7 +91,7 @@ const updateUser = async (req, res) => {
       return res.status(404).send({ error: "Usuario no encontrado" });
     }
 
-    res.send(user);
+    res.json(message);
   } catch (error) {
     res.status(400).send(error);
   }
@@ -80,6 +100,12 @@ const updateUser = async (req, res) => {
 const deleteUser = async (req, res) => {
   try {
     const userId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(userId)) {
+      return res
+        .status(400)
+        .send({ message: "El ID de usuario no es válido." });
+    }
 
     const user = await User.findById(userId);
 
@@ -91,7 +117,7 @@ const deleteUser = async (req, res) => {
 
     user=await User.findByIdAndUpdate(userId, { isActive: false });
 
-    res.send(user);
+    res.json({message:"Usuario inhabilitado"});
   } catch (error) {
     res.status(500).send(error);
   }

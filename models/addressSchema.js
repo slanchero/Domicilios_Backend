@@ -11,12 +11,13 @@ const AddressSchema = new mongoose.Schema({
     type: mongoose.Schema.Types.ObjectId,
     ref: "User",
     required: true,
+    immutable: true,
   },
   label: { type: String }, // ej. "Casa", "Trabajo", etc.
   isActive: {
     type: Boolean,
     default: true,
-  }
+  },
 });
 
 module.exports = mongoose.model("Address", AddressSchema);

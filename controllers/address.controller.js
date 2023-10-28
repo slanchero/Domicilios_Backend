@@ -16,6 +16,13 @@ const getAddress = async (req, res) => {
   const addressId = req.params.id;
 
   try {
+
+    if (!mongoose.Types.ObjectId.isValid(addressId)) {
+      return res
+        .status(400)
+        .send({ message: "El ID de direccion no es válido." });
+    }
+
     const address = await Address.findOne({_id:addressId,isActive:true}).lean();
     if (!address) {
       return res.status(404).json({ message: "Direccion no encontrada" });
@@ -49,7 +56,7 @@ const createAddress = async (req, res) => {
     user.addresses.push(newAddress._id);
     await user.save();
 
-    res.status(201).json(newAddress);
+    res.status(201).json({message:"Direccion creada"});
   } catch (err) {
     res
       .status(500)
@@ -59,8 +66,18 @@ const createAddress = async (req, res) => {
 
 const updateAddress = async (req, res) => {
   try {
+    let message={message:"Direccion actualizada"};
+
     const addressId = req.params.id;
-    const updates = req.body;
+    const {userId,...updates} = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(addressId)) {
+      return res
+        .status(400)
+        .send({ message: "El ID de restaurante no es válido." });
+    }
+
+    if(userId){message["npUpdate"]="El usuario no se puede cambiar"}
 
     const address = await Address.findByIdAndUpdate(addressId, updates, {
       new: true,
@@ -70,15 +87,21 @@ const updateAddress = async (req, res) => {
       return res.status(404).send({ error: "Direccion no encontrado" });
     }
 
-    res.send(address);
+    res.json(message);
   } catch (error) {
-    res.status(400).send(error);
+    res.status(400).json({error:error});
   }
 };
 
 const deleteAddress = async (req, res) => {
   try {
     const addressId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(addressId)) {
+      return res
+        .status(400)
+        .send({ message: "El ID de restaurante no es válido." });
+    }
 
     const address = await Address.findByIdAndUpdate(addressId,{isActive:false});
 
@@ -92,9 +115,9 @@ const deleteAddress = async (req, res) => {
       await user.save();
     }
 
-    res.send(address);
+    res.json({message:"Direccion inhabilitada"});
   } catch (err) {
-    res.status(500).send(err);
+    res.status(500).json({error:err});
   }
 };
 

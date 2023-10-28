@@ -17,6 +17,13 @@ const getRestaurants = async (req, res) => {
     }
 
     if (req.query.ownerId) {
+
+      if (!mongoose.Types.ObjectId.isValid(req.query.ownerId)) {
+        return res
+          .status(400)
+          .send({ message: "El ID de usuario no es válido." });
+      }
+
       query.ownerId = req.query.ownerId;
     }
 
@@ -33,7 +40,14 @@ const getRestaurant = async (req, res) => {
   const restaurantId = req.params.id;
 
   try {
-    const restaurant = await Restaurant.findById(restaurantId, {
+
+    if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
+      return res
+        .status(400)
+        .send({ message: "El ID de restaurante no es válido." });
+    }
+
+    const restaurant = await Restaurant.findOne({_id:restaurantId,
       isActive: true,
     }).lean();
     if (!restaurant) {
@@ -68,7 +82,7 @@ const createRestaurant = async (req, res) => {
     const newRestaurant = new Restaurant(restaurant);
     newRestaurant.save();
 
-    res.status(201).json(newRestaurant);
+    res.status(201).json({message:"Restaurante creado"});
   } catch (err) {
     res
       .status(500)
@@ -77,15 +91,31 @@ const createRestaurant = async (req, res) => {
 };
 
 
-//arreglar aqui
 const updateRestaurant = async (req, res) => {
   try {
+    let message={message:"Restaurante actualizado"};
+
     const restaurantId = req.params.id;
-    const updates = req.body;
+    const {ownerId,...updates} = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(ownerId)) {
+      return res
+        .status(400)
+        .send({ message: "El ID de usuario no es válido." });
+    }
+
+    const user = await User.findOne({
+      _id: restaurant.ownerId,
+      isActive: true,
+    });
+
+    if (!user) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
 
     const restaurant = await Restaurant.findByIdAndUpdate(
       restaurantId,
-      updates,
+      {ownerId:ownerId,...updates},
       {
         new: true,
       }
@@ -95,15 +125,21 @@ const updateRestaurant = async (req, res) => {
       return res.status(404).send({ error: "Restaurante no encontrado" });
     }
 
-    res.send(restaurant);
+    res.json(message);
   } catch (error) {
-    res.status(400).send(error);
+    res.status(400).json({error:error});
   }
 };
 
 const deleteRestaurant = async (req, res) => {
   try {
     const restaurantId = req.params.id;
+
+    if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
+      return res
+        .status(400)
+        .send({ message: "El ID de restaurante no es válido." });
+    }
 
     const restaurant = await Restaurant.findByIdAndUpdate(restaurantId, {
       isActive: false,
@@ -115,7 +151,7 @@ const deleteRestaurant = async (req, res) => {
 
     res.send({ message: "Restaurante inhabilitado con éxito" });
   } catch (error) {
-    res.status(500).send(error);
+    res.status(500).json({error:error});
   }
 };
 
