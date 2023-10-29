@@ -8,7 +8,6 @@ const getProducts = async (req, res) => {
 
     if (req.query.category) {
       const categories = req.query.category.split(",");
-      console.log(categories);
       query.categories = { $in: categories };
     }
 
@@ -17,6 +16,15 @@ const getProducts = async (req, res) => {
         return res
           .status(400)
           .send({ message: "El ID de restaurante no es válido." });
+      }
+
+      const restaurant = await Restaurant.findOne({
+        _id: req.query.restaurantId,
+        isActive: true,
+      });
+  
+      if (!restaurant) {
+        return res.status(404).json({ message: "Restaurante no encontrado" });
       }
       query.restaurantId = req.query.restaurantId;
     }
@@ -40,7 +48,7 @@ const getProduct = async (req, res) => {
         .send({ message: "El ID de producto no es válido." });
     }
 
-    const product = await Product.findById(productId, {
+    const product = await Product.findOne({_id:productId,
       isActive: true,
     }).lean();
     if (!product) {
@@ -90,7 +98,7 @@ const updateProduct = async (req, res) => {
     const productId = req.params.id;
     const { restaurantId, ...updates } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
+    if (!mongoose.Types.ObjectId.isValid(productId)) {
       return res
         .status(400)
         .send({ message: "El ID de restaurante no es válido." });

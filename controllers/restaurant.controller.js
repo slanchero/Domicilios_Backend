@@ -98,24 +98,28 @@ const updateRestaurant = async (req, res) => {
     const restaurantId = req.params.id;
     const {ownerId,...updates} = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(ownerId)) {
-      return res
-        .status(400)
-        .send({ message: "El ID de usuario no es válido." });
-    }
+    if(ownerId){
+      if (!mongoose.Types.ObjectId.isValid(ownerId)) {
+        return res
+          .status(400)
+          .send({ message: "El ID de usuario no es válido." });
+      }
+  
+      const user = await User.findOne({
+        _id: ownerId,
+        isActive: true,
+      });
 
-    const user = await User.findOne({
-      _id: restaurant.ownerId,
-      isActive: true,
-    });
+      if (!user) {
+        return res.status(404).json({ message: "Usuario no encontrado" });
+      }
 
-    if (!user) {
-      return res.status(404).json({ message: "Usuario no encontrado" });
+      updates.ownerId=ownerId;
     }
 
     const restaurant = await Restaurant.findByIdAndUpdate(
       restaurantId,
-      {ownerId:ownerId,...updates},
+      updates,
       {
         new: true,
       }

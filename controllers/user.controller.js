@@ -107,15 +107,13 @@ const deleteUser = async (req, res) => {
         .send({ message: "El ID de usuario no es válido." });
     }
 
-    const user = await User.findById(userId);
+    const user = await User.findByIdAndUpdate(userId,{isActive:false});
 
     if (!user) {
       return res.status(404).send({ error: "Usuario no encontrado" });
     }
 
     await Address.updateMany({ userId: userId }, { isActive: false });
-
-    user=await User.findByIdAndUpdate(userId, { isActive: false });
 
     res.json({message:"Usuario inhabilitado"});
   } catch (error) {

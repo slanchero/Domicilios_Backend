@@ -8,7 +8,7 @@ const getOrders = async (req, res) => {
   try {
     const { userId, restaurantId, startDate, endDate } = req.query;
 
-    const query = {};
+    const query = {isActive:true};
     if (userId) query.userId = userId;
     if (restaurantId) query.restaurantId = restaurantId;
     if (startDate && endDate) {
@@ -37,7 +37,7 @@ const getOrders = async (req, res) => {
 
 const getDeliveredOrders = async (req, res) => {
   try {
-    const order = await Order.find({status:"En Camino", isActive: true });
+    const order = await Order.find({ status: "En Camino", isActive: true });
 
     res.json(order);
   } catch (error) {}
@@ -121,7 +121,7 @@ const createOrder = async (req, res) => {
     const newOrder = new Order(orderData);
     await newOrder.save();
 
-    res.status(201).json({ message: "Pedido creada" });
+    res.status(201).json({ message: "Pedido creado" });
   } catch (error) {
     res
       .status(500)
@@ -129,65 +129,69 @@ const createOrder = async (req, res) => {
   }
 };
 
-// const updateProduct = async (req, res) => {
-//   try {
-//     let message = { message: "Producto actualizado" };
+const updateOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id;
 
-//     const productId = req.params.id;
-//     const { restaurantId, ...updates } = req.body;
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).send({
+        message: `El ID del pedido no es válido.`,
+      });
+    }
 
-//     if (!mongoose.Types.ObjectId.isValid(restaurantId)) {
-//       return res
-//         .status(400)
-//         .send({ message: "El ID de restaurante no es válido." });
-//     }
+    const updates = {};
+    if (req.body.status) updates.status = req.body.status;
+    if (req.body.isActive !== undefined) updates.isActive = req.body.isActive;
 
-//     if (restaurantId) {
-//       message["npUpdate"] = "El Restaurante no se puede cambiar";
-//     }
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).send({ error: "Pedido no encontrado" });
+    }
 
-//     const product = await Product.findByIdAndUpdate(productId, updates, {
-//       new: true,
-//     });
+    if (order.status === "Enviado") {
+      return res
+        .status(400)
+        .send({ error: "No se puede modificar un pedido en estado 'Enviado'" });
+    }
 
-//     if (!product) {
-//       return res.status(404).send({ error: "Producto no encontrado" });
-//     }
+    Object.assign(order, updates);
+    await order.save();
 
-//     res.json(message);
-//   } catch (error) {
-//     res.status(400).json({ error: error });
-//   }
-// };
+    res.send(order);
+  } catch (error) {
+    res.status(400).send(error);
+  }
+};
 
-// const deleteProduct = async (req, res) => {
-//   try {
-//     const productId = req.params.id;
+const deleteOrder = async (req, res) => {
+  try {
+    const orderId = req.params.id;
 
-//     if (!mongoose.Types.ObjectId.isValid(productId)) {
-//       return res
-//         .status(400)
-//         .send({ message: "El ID de producto no es válido." });
-//     }
+    if (!mongoose.Types.ObjectId.isValid(orderId)) {
+      return res.status(400).send({
+        message: `El ID del pedido no es válido.`,
+      });
+    }
 
-//     const product = await Product.findByIdAndUpdate(productId, {
-//       isActive: false,
-//     });
+    const order = await Order.findById(orderId);
+    if (!order) {
+      return res.status(404).send({ error: "Pedido no encontrado" });
+    }
 
-//     if (!product) {
-//       return res.status(404).send({ error: "Producto no encontrado" });
-//     }
+    order.isActive = false;
+    await order.save();
 
-//     res.send({ message: "Producto inhabilitado con éxito" });
-//   } catch (error) {
-//     res.status(500).json({ error: error });
-//   }
-// };
+    res.send({ message: "Pedido inhabilitado" });
+  } catch (error) {
+    res.status(500).send(error);
+  }
+};
 
 module.exports = {
-  createProduct,
-  deleteProduct,
-  getProduct,
-  getProducts,
-  updateProduct,
+  createOrder,
+  deleteOrder,
+  getDeliveredOrders,
+  getOrder,
+  getOrders,
+  updateOrder
 };

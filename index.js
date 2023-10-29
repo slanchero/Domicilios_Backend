@@ -17,6 +17,7 @@ app.use("/api/users",require("./routes/user.routes"));
 app.use("/api/address",require("./routes/address.routes"));
 app.use("/api/restaurant",require("./routes/restaurant.routes"));
 app.use("/api/product",require("./routes/product.routes"));
+app.use("/api/order",require("./routes/order.routes"));
 
 app.use((req,res)=>{res.status(404).send("ERROR: 404")});
 
