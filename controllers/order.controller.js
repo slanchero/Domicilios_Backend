@@ -18,15 +18,6 @@ const getOrders = async (req, res) => {
       };
     }
 
-    if (
-      !mongoose.Types.ObjectId.isValid(userId) ||
-      !mongoose.Types.ObjectId.isValid(restaurantId)
-    ) {
-      return res
-        .status(400)
-        .send({ message: "El ID de Usuario o Restaurante no es válido." });
-    }
-
     const orders = await Order.find(query);
 
     res.json(orders);
@@ -141,7 +132,7 @@ const updateOrder = async (req, res) => {
 
     const updates = {};
     if (req.body.status) updates.status = req.body.status;
-    if (req.body.isActive !== undefined) updates.isActive = req.body.isActive;
+    if (req.body.isActive) updates.isActive = req.body.isActive;
 
     const order = await Order.findById(orderId);
     if (!order) {

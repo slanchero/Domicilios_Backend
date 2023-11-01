@@ -1,4 +1,5 @@
 const mongoose = require("mongoose");
+const Product=require("./productSchema")
 
 const OrderItemSchema = new mongoose.Schema({
   productId: {
@@ -29,5 +30,21 @@ const OrderSchema = new mongoose.Schema({
   },
   createdAt: { type: Date, default: Date.now },
 });
+
+OrderSchema.pre('save', async function(next) {
+  const order = this;
+
+  let total = 0;
+
+  for (let item of order.items) {
+      const product = await Product.findById(item.productId);
+      total += product.price * item.quantity;
+  }
+
+  order.totalAmount = total;
+
+  next();
+});
+
 
 module.exports = mongoose.model("Order", OrderSchema);
