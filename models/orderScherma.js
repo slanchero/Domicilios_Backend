@@ -1,5 +1,5 @@
 const mongoose = require("mongoose");
-const Product=require("./productSchema")
+const Product = require("./productSchema");
 
 const OrderItemSchema = new mongoose.Schema({
   productId: {
@@ -17,12 +17,13 @@ const OrderSchema = new mongoose.Schema({
     ref: "Restaurant",
     required: true,
   },
-  items: [{type:OrderItemSchema,require:true}],
+  items: [{ type: OrderItemSchema, require: true }],
   status: {
     type: String,
     enum: ["Creado", "En Curso", "En Camino", "Entregado"],
     default: "Creado",
   },
+  rating: { type: Number, default: 0, min: 0, max: 5 },
   totalAmount: { type: Number, required: true },
   isActive: {
     type: Boolean,
@@ -31,20 +32,19 @@ const OrderSchema = new mongoose.Schema({
   createdAt: { type: Date, default: Date.now },
 });
 
-OrderSchema.pre('save', async function(next) {
+OrderSchema.pre("save", async function (next) {
   const order = this;
 
   let total = 0;
 
   for (let item of order.items) {
-      const product = await Product.findById(item.productId);
-      total += product.price * item.quantity;
+    const product = await Product.findById(item.productId);
+    total += product.price * item.quantity;
   }
 
   order.totalAmount = total;
 
   next();
 });
-
 
 module.exports = mongoose.model("Order", OrderSchema);
