@@ -19,9 +19,12 @@ const UserSchema = new mongoose.Schema({
   },
   //Nombre completo
   name: {
-    firstName: { type: String, required: true, minLength: 1 },
-    middleName: { type: String, minLength: 1 },
-    lastNames: { type: String, required: true, minLength: 1 },
+    type: {
+      firstName: { type: String, required: true, minLength: 1 },
+      middleName: { type: String, minLength: 1 },
+      lastNames: { type: String, required: true, minLength: 1 },
+    },
+    require: true,
   },
   //Contraseña
   password: {
@@ -50,11 +53,14 @@ const UserSchema = new mongoose.Schema({
   },
   //Direccion
   address: {
-    street: { type: String, required: true },
-    city: { type: String, required: true },
-    state: { type: String, required: true },
-    postalCode: { type: String, required: true },
-    country: { type: String, required: true },
+    type: {
+      street: { type: String, required: true },
+      city: { type: String, required: true },
+      state: { type: String, required: true },
+      postalCode: { type: String, required: true },
+      country: { type: String, required: true },
+    },
+    required: true,
   },
   //Role
   role: { type: String, enum: ["cliente", "administrador"], required: true },
