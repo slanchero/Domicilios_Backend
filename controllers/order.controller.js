@@ -4,12 +4,14 @@ const Restaurant = require("../models/restaurantSchema");
 const User = require("../models/userSchema");
 const mongoose = require("mongoose");
 
+//Obtener todos los pedidos o los pedidos realizados por un usuario, enviados por un usuario, pedidos de un restaurante o pedidos entre dos fechas
 const getOrders = async (req, res) => {
   try {
-    const { userId, restaurantId, startDate, endDate } = req.query;
+    const { userId, restaurantId, startDate, endDate, deliveryId } = req.query;
 
-    const query = {isActive:true};
+    const query = { isActive: true };
     if (userId) query.userId = userId;
+    if (deliveryId) query.deliveryId = deliveryId;
     if (restaurantId) query.restaurantId = restaurantId;
     if (startDate && endDate) {
       query.createdAt = {
@@ -22,49 +24,40 @@ const getOrders = async (req, res) => {
 
     res.json(orders);
   } catch (error) {
-    res.status(500).send(error);
+    res.status(500).json(error);
   }
 };
 
+//Obtener los pedidos enviados
 const getDeliveredOrders = async (req, res) => {
   try {
-    const order = await Order.find({ status: "En Camino", isActive: true });
+    const orders = await Order.find({ status: "En Camino", isActive: true });
 
-    res.json(order);
+    res.json(orders);
   } catch (error) {}
 };
 
+//Obtener el pedido por el ID
 const getOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
 
-    if (!mongoose.Types.ObjectId.isValid(orderId)) {
-      return res
-        .status(400)
-        .send({ message: "El ID del pedido no es válido." });
-    }
-
     const order = await Order.findOne({ _id: orderId, isActive: true });
 
     if (!order) {
-      return res.status(404).send({ error: "Pedido no encontrado" });
+      return res.status(404).json({ error: "Pedido no encontrado" });
     }
 
     res.json(order);
   } catch (error) {
-    res.status(500).send(error);
+    res.status(500).json({ error: error });
   }
 };
 
+//Crear pedido
 const createOrder = async (req, res) => {
   try {
     const order = req.body;
-
-    if (!mongoose.Types.ObjectId.isValid(order.userId)) {
-      return res
-        .status(400)
-        .send({ message: "El ID de usuario no es válido." });
-    }
 
     const user = await User.findOne({
       _id: order.userId,
@@ -73,12 +66,6 @@ const createOrder = async (req, res) => {
 
     if (!user) {
       return res.status(404).json({ message: `Usuario no encontrado` });
-    }
-
-    if (!mongoose.Types.ObjectId.isValid(order.restaurantId)) {
-      return res
-        .status(400)
-        .send({ message: "El ID de restaurante no es válido." });
     }
 
     const restaurant = await User.findOne({
@@ -91,21 +78,15 @@ const createOrder = async (req, res) => {
     }
 
     order.items.forEach(async (element) => {
-      if (!mongoose.Types.ObjectId.isValid(element.productId)) {
-        return res.status(400).send({
-          message: `El ID de producto ${element.productId} no es válido.`,
-        });
-      } else {
-        const product = await Product.findOne({
-          _id: element.productId,
-          isActive: true,
-        });
+      const product = await Product.findOne({
+        _id: element.productId,
+        isActive: true,
+      });
 
-        if (!product) {
-          return res
-            .status(404)
-            .json({ message: `producto ${element.productId} no encontrado` });
-        }
+      if (!product) {
+        return res
+          .status(404)
+          .json({ message: `producto ${element.productId} no encontrado` });
       }
     });
 
@@ -120,61 +101,46 @@ const createOrder = async (req, res) => {
   }
 };
 
+//Actualizar pedido
 const updateOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
 
-    if (!mongoose.Types.ObjectId.isValid(orderId)) {
-      return res.status(400).send({
-        message: `El ID del pedido no es válido.`,
-      });
-    }
-
-    const updates = {};
-    if (req.body.status) updates.status = req.body.status;
-    if (req.body.isActive) updates.isActive = req.body.isActive;
+    const {userId,restaurantId,items,totalAmount,...updates}=req.body;
 
     const order = await Order.findById(orderId);
     if (!order) {
-      return res.status(404).send({ error: "Pedido no encontrado" });
+      return res.status(404).json({ error: "Pedido no encontrado" });
     }
 
     if (order.status === "Enviado") {
       return res
         .status(400)
-        .send({ error: "No se puede modificar un pedido en estado 'Enviado'" });
+        .json({ error: "No se puede modificar un pedido en estado 'Enviado'" });
     }
 
     Object.assign(order, updates);
     await order.save();
 
-    res.send(order);
+    res.json(order);
   } catch (error) {
-    res.status(400).send(error);
+    res.status(400).json(error);
   }
 };
 
+//Inhabilitar pedido
 const deleteOrder = async (req, res) => {
   try {
     const orderId = req.params.id;
 
-    if (!mongoose.Types.ObjectId.isValid(orderId)) {
-      return res.status(400).send({
-        message: `El ID del pedido no es válido.`,
-      });
-    }
-
-    const order = await Order.findById(orderId);
+    const order = await Order.findByIdAndUpdate(orderId,{isActive:false});
     if (!order) {
-      return res.status(404).send({ error: "Pedido no encontrado" });
+      return res.status(404).json({ error: "Pedido no encontrado" });
     }
 
-    order.isActive = false;
-    await order.save();
-
-    res.send({ message: "Pedido inhabilitado" });
+    res.json({ message: "Pedido inhabilitado" });
   } catch (error) {
-    res.status(500).send(error);
+    res.status(500).json(error);
   }
 };
 
@@ -184,5 +150,5 @@ module.exports = {
   getDeliveredOrders,
   getOrder,
   getOrders,
-  updateOrder
+  updateOrder,
 };

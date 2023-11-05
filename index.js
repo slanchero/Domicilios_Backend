@@ -14,7 +14,6 @@ app.use(cors());
 app.use(express.json());
 
 app.use("/api/users",require("./routes/user.routes"));
-app.use("/api/address",require("./routes/address.routes"));
 app.use("/api/restaurant",require("./routes/restaurant.routes"));
 app.use("/api/product",require("./routes/product.routes"));
 app.use("/api/order",require("./routes/order.routes"));

@@ -5,6 +5,7 @@ const passwordRegex = /(?=.*[0-9])(?=.*[a-zA-Z]).{8,}/;
 const phoneNumberRegex = /^\+\d{1,3}\s?\d{6,14}$/;
 
 const UserSchema = new mongoose.Schema({
+  //Correo electronico
   email: {
     type: String,
     required: true,
@@ -16,11 +17,13 @@ const UserSchema = new mongoose.Schema({
       message: (props) => `${props.value} no es un correo electrónico válido!`,
     },
   },
+  //Nombre completo
   name: {
-    firstName:{type:String,required:true,minLength:1},
-    secondName:{type:String,minLength:1},
-    lastNames:{type:String,required:true,minLength:1}
+    firstName: { type: String, required: true, minLength: 1 },
+    middleName: { type: String, minLength: 1 },
+    lastNames: { type: String, required: true, minLength: 1 },
   },
+  //Contraseña
   password: {
     type: String,
     required: true,
@@ -33,6 +36,7 @@ const UserSchema = new mongoose.Schema({
         "La contraseña debe contener al menos un número y por lo menos una letra",
     },
   },
+  //numero telefonico + <indicativo> <numeor de telefono>
   phoneNumber: {
     type: String,
     required: true,
@@ -41,17 +45,20 @@ const UserSchema = new mongoose.Schema({
       validator: function (value) {
         return phoneNumberRegex.test(value);
       },
-      message: `${props.value} no es un número de teléfono válido!`,
+      message: (props) => `${props.value} no es un número de teléfono válido!`,
     },
   },
-  addresses: {
+  //Direccion
+  address: {
     street: { type: String, required: true },
     city: { type: String, required: true },
     state: { type: String, required: true },
     postalCode: { type: String, required: true },
     country: { type: String, required: true },
   },
+  //Role
   role: { type: String, enum: ["cliente", "administrador"], required: true },
+  //Habilitado
   isActive: {
     type: Boolean,
     default: true,

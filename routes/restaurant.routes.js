@@ -8,7 +8,7 @@ const {
   updateRestaurant,
 } = require("../controllers/restaurant.controller");
 
-const router=Router();
+const router = Router();
 
 router.get("/", getRestaurants);
 

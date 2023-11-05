@@ -2,6 +2,7 @@ const Product = require("../models/productSchema");
 const Restaurant = require("../models/restaurantSchema");
 const mongoose = require("mongoose");
 
+//Obtener todos los productos o obtener los productos de algun restaurante o categoria
 const getProducts = async (req, res) => {
   try {
     let query = {};
@@ -12,17 +13,11 @@ const getProducts = async (req, res) => {
     }
 
     if (req.query.restaurantId) {
-      if (!mongoose.Types.ObjectId.isValid(req.query.restaurantId)) {
-        return res
-          .status(400)
-          .send({ message: "El ID de restaurante no es válido." });
-      }
-
       const restaurant = await Restaurant.findOne({
         _id: req.query.restaurantId,
         isActive: true,
       });
-  
+
       if (!restaurant) {
         return res.status(404).json({ message: "Restaurante no encontrado" });
       }
@@ -38,19 +33,15 @@ const getProducts = async (req, res) => {
   }
 };
 
+//Obtener el producto por ID
 const getProduct = async (req, res) => {
   const productId = req.params.id;
 
   try {
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
-      return res
-        .status(400)
-        .send({ message: "El ID de producto no es válido." });
-    }
-
-    const product = await Product.findOne({_id:productId,
+    const product = await Product.findOne({
+      _id: productId,
       isActive: true,
-    }).lean();
+    });
     if (!product) {
       return res.status(404).json({ message: "Producto no encontrado" });
     }
@@ -61,15 +52,10 @@ const getProduct = async (req, res) => {
   }
 };
 
+//Crear producto
 const createProduct = async (req, res) => {
   try {
     const product = req.body;
-
-    if (!mongoose.Types.ObjectId.isValid(product.restaurantId)) {
-      return res
-        .status(400)
-        .send({ message: "El ID de restaurante no es válido." });
-    }
 
     const restaurant = await Restaurant.findOne({
       _id: product.restaurantId,
@@ -91,6 +77,7 @@ const createProduct = async (req, res) => {
   }
 };
 
+//Actualizar producto
 const updateProduct = async (req, res) => {
   try {
     let message = { message: "Producto actualizado" };
@@ -98,14 +85,8 @@ const updateProduct = async (req, res) => {
     const productId = req.params.id;
     const { restaurantId, ...updates } = req.body;
 
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
-      return res
-        .status(400)
-        .send({ message: "El ID de restaurante no es válido." });
-    }
-
     if (restaurantId) {
-      message["npUpdate"] = "El Restaurante no se puede cambiar";
+      message["noUpdate"] = "El Restaurante no se puede cambiar";
     }
 
     const product = await Product.findByIdAndUpdate(productId, updates, {
@@ -113,7 +94,7 @@ const updateProduct = async (req, res) => {
     });
 
     if (!product) {
-      return res.status(404).send({ error: "Producto no encontrado" });
+      return res.status(404).json({ error: "Producto no encontrado" });
     }
 
     res.json(message);
@@ -122,25 +103,20 @@ const updateProduct = async (req, res) => {
   }
 };
 
+//Inhabilitar un producto
 const deleteProduct = async (req, res) => {
   try {
     const productId = req.params.id;
-
-    if (!mongoose.Types.ObjectId.isValid(productId)) {
-      return res
-        .status(400)
-        .send({ message: "El ID de producto no es válido." });
-    }
 
     const product = await Product.findByIdAndUpdate(productId, {
       isActive: false,
     });
 
     if (!product) {
-      return res.status(404).send({ error: "Producto no encontrado" });
+      return res.status(404).json({ error: "Producto no encontrado" });
     }
 
-    res.send({ message: "Producto inhabilitado con éxito" });
+    res.json({ message: "Producto inhabilitado con éxito" });
   } catch (error) {
     res.status(500).json({ error: error });
   }
