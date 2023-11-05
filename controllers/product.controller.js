@@ -69,6 +69,9 @@ const createProduct = async (req, res) => {
     const newProduct = new Product(product);
     newProduct.save();
 
+    restaurant.menu.push(newProduct._id);
+    await restaurant.save();
+
     res.status(201).json({ message: "Producto creado" });
   } catch (err) {
     res
@@ -114,6 +117,12 @@ const deleteProduct = async (req, res) => {
 
     if (!product) {
       return res.status(404).json({ error: "Producto no encontrado" });
+    }
+    
+    const restaurant = await Restaurant.findById(product.restaurantId);
+    if (restaurant) {
+      restaurant.menu.pull(addressId);
+      await restaurant.save();
     }
 
     res.json({ message: "Producto inhabilitado con éxito" });

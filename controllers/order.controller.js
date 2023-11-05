@@ -93,6 +93,9 @@ const createOrder = async (req, res) => {
     const newOrder = new Order(orderData);
     await newOrder.save();
 
+    restaurant.orders.push(newOrder._id);
+    await restaurant.save();
+
     res.status(201).json({ message: "Pedido creado" });
   } catch (error) {
     res
@@ -136,6 +139,12 @@ const deleteOrder = async (req, res) => {
     const order = await Order.findByIdAndUpdate(orderId,{isActive:false});
     if (!order) {
       return res.status(404).json({ error: "Pedido no encontrado" });
+    }
+
+    const restaurant = await Restaurant.findById(order.restaurantId);
+    if (restaurant) {
+      restaurant.orders.pull(orderId);
+      await restaurant.save();
     }
 
     res.json({ message: "Pedido inhabilitado" });
